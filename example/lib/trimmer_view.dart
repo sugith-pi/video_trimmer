@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:example/preview.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Preview;
 import 'package:video_trimmer/video_trimmer.dart';
 
 class TrimmerView extends StatefulWidget {
@@ -90,7 +90,7 @@ class _TrimmerViewState extends State<TrimmerView> {
                       viewerHeight: 50.0,
                       viewerWidth: MediaQuery.of(context).size.width,
                       durationStyle: DurationStyle.FORMAT_MM_SS,
-                      maxVideoLength: const Duration(seconds: 10),
+                      // maxVideoLength: const Duration(seconds: 10),
                       editorProperties: TrimEditorProperties(
                         borderPaintColor: Colors.yellow,
                         borderWidth: 4,
