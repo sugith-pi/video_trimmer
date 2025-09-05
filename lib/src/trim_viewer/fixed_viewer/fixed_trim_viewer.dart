@@ -26,6 +26,10 @@ class FixedTrimViewer extends StatefulWidget {
   /// For defining the maximum length of the output video.
   final Duration maxVideoLength;
 
+  /// For defining the maximum duration that can be selected for trimming.
+  /// This constrains the actual trim selection length.
+  final Duration? maxVideoEditLength;
+
   /// For showing the start and the end point of the
   /// video on top of the trimmer area.
   ///
@@ -119,6 +123,7 @@ class FixedTrimViewer extends StatefulWidget {
     this.viewerWidth = 50.0 * 8,
     this.viewerHeight = 50,
     this.maxVideoLength = const Duration(milliseconds: 0),
+    this.maxVideoEditLength,
     this.showDuration = true,
     this.durationTextStyle = const TextStyle(color: Colors.white),
     this.durationStyle = DurationStyle.FORMAT_HH_MM_SS,
@@ -161,6 +166,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
   double? fraction;
   double? maxLengthPixels;
+  double? maxEditLengthPixels;
 
   FixedThumbnailViewer? thumbnailWidget;
 
@@ -228,16 +234,40 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
           maxLengthPixels = _thumbnailViewerW;
         }
 
-        _videoEndPos = fraction != null
-            ? _videoDuration.toDouble() * fraction!
-            : _videoDuration.toDouble();
+        // Calculate maxEditLengthPixels if maxVideoEditLength is specified
+        if (widget.maxVideoEditLength != null &&
+            widget.maxVideoEditLength!.inMilliseconds > 0) {
+          final editFraction = widget.maxVideoEditLength!.inMilliseconds /
+              totalDuration.inMilliseconds;
+          maxEditLengthPixels = _thumbnailViewerW * editFraction;
+        }
 
-        widget.onChangeEnd!(_videoEndPos);
+        // Calculate initial video end position
+        if (fraction != null) {
+          _videoEndPos = _videoDuration.toDouble() * fraction!;
+        } else {
+          _videoEndPos = _videoDuration.toDouble();
+        }
+        
+        // If maxVideoEditLength constraint is more restrictive, adjust _videoEndPos
+        if (maxEditLengthPixels != null && 
+            (maxLengthPixels == null || maxEditLengthPixels! < maxLengthPixels!)) {
+          final editFraction = maxEditLengthPixels! / _thumbnailViewerW;
+          _videoEndPos = _videoDuration.toDouble() * editFraction;
+        }
 
-        _endPos = Offset(
-          maxLengthPixels != null ? maxLengthPixels! : _thumbnailViewerW,
-          _thumbnailViewerH,
-        );
+        widget.onChangeEnd?.call(_videoEndPos);
+
+        // Set initial end position considering both maxVideoLength and maxVideoEditLength
+        double initialEndPosX = maxLengthPixels != null ? maxLengthPixels! : _thumbnailViewerW;
+        
+        // If maxVideoEditLength is specified and smaller than maxVideoLength, use that instead
+        if (maxEditLengthPixels != null && 
+            (maxLengthPixels == null || maxEditLengthPixels! < maxLengthPixels!)) {
+          initialEndPosX = maxEditLengthPixels!;
+        }
+        
+        _endPos = Offset(initialEndPosX, _thumbnailViewerH);
 
         // Defining the tween points
         _linearTween = Tween(begin: _startPos.dx, end: _endPos.dx);
@@ -266,18 +296,18 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
         final bool isPlaying = videoPlayerController.value.isPlaying;
 
         if (isPlaying) {
-          widget.onChangePlaybackState!(true);
+          widget.onChangePlaybackState?.call(true);
           setState(() {
             _currentPosition =
                 videoPlayerController.value.position.inMilliseconds;
 
             if (_currentPosition > _videoEndPos.toInt()) {
               videoPlayerController.pause();
-              widget.onChangePlaybackState!(false);
+              widget.onChangePlaybackState?.call(false);
               _animationController!.stop();
             } else {
               if (!_animationController!.isAnimating) {
-                widget.onChangePlaybackState!(true);
+                widget.onChangePlaybackState?.call(true);
                 _animationController!.forward();
               }
             }
@@ -290,7 +320,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
                 _animationController!.reset();
               }
               _animationController!.stop();
-              widget.onChangePlaybackState!(false);
+              widget.onChangePlaybackState?.call(false);
             }
           }
         }
@@ -343,9 +373,20 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
     if (_dragType == EditorDragType.left) {
       _startCircleSize = widget.editorProperties.circleSizeOnDrag;
-      if ((_startPos.dx + details.delta.dx >= 0) &&
-          (_startPos.dx + details.delta.dx <= _endPos.dx) &&
-          !(_endPos.dx - _startPos.dx - details.delta.dx > maxLengthPixels!)) {
+      final newStartPos = _startPos.dx + details.delta.dx;
+      final currentSelectionLength = _endPos.dx - newStartPos;
+
+      // Check constraints: bounds, max video length, and max edit length
+      final maxEditConstraint = maxEditLengthPixels == null ||
+          currentSelectionLength <= maxEditLengthPixels!;
+      final maxVideoConstraint =
+          maxLengthPixels == null || currentSelectionLength <= maxLengthPixels!;
+
+
+      if ((newStartPos >= 0) &&
+          (newStartPos <= _endPos.dx) &&
+          maxVideoConstraint &&
+          maxEditConstraint) {
         _startPos += details.delta;
         _onStartDragged();
       }
@@ -361,9 +402,20 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
       }
     } else {
       _endCircleSize = widget.editorProperties.circleSizeOnDrag;
-      if ((_endPos.dx + details.delta.dx <= _thumbnailViewerW) &&
-          (_endPos.dx + details.delta.dx >= _startPos.dx) &&
-          !(_endPos.dx - _startPos.dx + details.delta.dx > maxLengthPixels!)) {
+      final newEndPos = _endPos.dx + details.delta.dx;
+      final currentSelectionLength = newEndPos - _startPos.dx;
+
+      // Check constraints: bounds, max video length, and max edit length
+      final maxEditConstraint = maxEditLengthPixels == null ||
+          currentSelectionLength <= maxEditLengthPixels!;
+      final maxVideoConstraint =
+          maxLengthPixels == null || currentSelectionLength <= maxLengthPixels!;
+
+
+      if ((newEndPos <= _thumbnailViewerW) &&
+          (newEndPos >= _startPos.dx) &&
+          maxVideoConstraint &&
+          maxEditConstraint) {
         _endPos += details.delta;
         _onEndDragged();
       }
@@ -374,7 +426,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
   void _onStartDragged() {
     _startFraction = (_startPos.dx / _thumbnailViewerW);
     _videoStartPos = _videoDuration * _startFraction;
-    widget.onChangeStart!(_videoStartPos);
+    widget.onChangeStart?.call(_videoStartPos);
     _linearTween.begin = _startPos.dx;
     _animationController!.duration =
         Duration(milliseconds: (_videoEndPos - _videoStartPos).toInt());
@@ -384,7 +436,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
   void _onEndDragged() {
     _endFraction = _endPos.dx / _thumbnailViewerW;
     _videoEndPos = _videoDuration * _endFraction;
-    widget.onChangeEnd!(_videoEndPos);
+    widget.onChangeEnd?.call(_videoEndPos);
     _linearTween.end = _endPos.dx;
     _animationController!.duration =
         Duration(milliseconds: (_videoEndPos - _videoStartPos).toInt());
@@ -409,11 +461,11 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
   @override
   void dispose() {
     videoPlayerController.pause();
-    widget.onChangePlaybackState!(false);
+    widget.onChangePlaybackState?.call(false);
     if (_videoFile != null) {
       videoPlayerController.setVolume(0.0);
       videoPlayerController.dispose();
-      widget.onChangePlaybackState!(false);
+      widget.onChangePlaybackState?.call(false);
     }
     super.dispose();
   }

@@ -29,6 +29,10 @@ class ScrollableTrimViewer extends StatefulWidget {
   /// For defining the maximum length of the output video.
   final Duration maxVideoLength;
 
+  /// For defining the maximum duration that can be selected for trimming.
+  /// This constrains the actual trim selection length.
+  final Duration? maxVideoEditLength;
+
   /// For showing the start and the end point of the
   /// video on top of the trimmer area.
   ///
@@ -123,6 +127,7 @@ class ScrollableTrimViewer extends StatefulWidget {
     required this.trimmer,
     required this.maxVideoLength,
     required this.onThumbnailLoadingComplete,
+    this.maxVideoEditLength,
     this.viewerWidth = 50 * 8,
     this.viewerHeight = 50,
     this.showDuration = true,
@@ -175,6 +180,7 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
 
   double? fraction;
   double? maxLengthPixels;
+  double? maxEditLengthPixels;
 
   ScrollableThumbnailViewer? thumbnailWidget;
 
@@ -359,13 +365,22 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
         log('trimmerFraction: $trimmerFraction');
         final trimmerCover = trimmerFraction * trimAreaLength;
         maxLengthPixels = trimmerCover;
+        
+        // Calculate maxEditLengthPixels if maxVideoEditLength is specified
+        if (widget.maxVideoEditLength != null && 
+            widget.maxVideoEditLength!.inMilliseconds > 0) {
+          final editFraction = widget.maxVideoEditLength!.inMilliseconds / 
+                              preciseAreaDuration.inMilliseconds;
+          maxEditLengthPixels = editFraction * trimAreaLength;
+        }
+        
         _endPos = Offset(trimmerCover, thumbnailHeight);
         log('START: $_startPos, END: $_endPos');
 
         _videoEndPos =
             preciseAreaDuration.inMilliseconds.toDouble() * trimmerFraction;
         log('Video End Pos: $_videoEndPos ms');
-        widget.onChangeEnd!(_videoEndPos);
+        widget.onChangeEnd?.call(_videoEndPos);
         log('Video Selected Duration: ${_videoEndPos - _videoStartPos}');
 
         // Defining the tween points
@@ -395,18 +410,18 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
       final bool isPlaying = videoPlayerController.value.isPlaying;
 
       if (isPlaying) {
-        widget.onChangePlaybackState!(true);
+        widget.onChangePlaybackState?.call(true);
         setState(() {
           _currentPosition =
               videoPlayerController.value.position.inMilliseconds;
 
           if (_currentPosition > _videoEndPos.toInt()) {
             videoPlayerController.pause();
-            widget.onChangePlaybackState!(false);
+            widget.onChangePlaybackState?.call(false);
             _animationController!.stop();
           } else {
             if (!_animationController!.isAnimating) {
-              widget.onChangePlaybackState!(true);
+              widget.onChangePlaybackState?.call(true);
               _animationController!.forward();
             }
           }
@@ -419,7 +434,7 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
               _animationController!.reset();
             }
             _animationController!.stop();
-            widget.onChangePlaybackState!(false);
+            widget.onChangePlaybackState?.call(false);
           }
         }
       }
@@ -474,9 +489,19 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
 
     if (_dragType == EditorDragType.left) {
       _startCircleSize = widget.editorProperties.circleSizeOnDrag;
-      if ((_startPos.dx + details.delta.dx >= 0) &&
-          (_startPos.dx + details.delta.dx <= _endPos.dx) &&
-          !(_endPos.dx - _startPos.dx - details.delta.dx > maxLengthPixels!)) {
+      final newStartPos = _startPos.dx + details.delta.dx;
+      final currentSelectionLength = _endPos.dx - newStartPos;
+      
+      // Check constraints: bounds, max video length, and max edit length
+      final maxEditConstraint = maxEditLengthPixels == null || 
+                               currentSelectionLength <= maxEditLengthPixels!;
+      final maxVideoConstraint = maxLengthPixels == null || 
+                                currentSelectionLength <= maxLengthPixels!;
+      
+      if ((newStartPos >= 0) &&
+          (newStartPos <= _endPos.dx) &&
+          maxVideoConstraint &&
+          maxEditConstraint) {
         _startPos += details.delta;
         _onStartDragged();
       }
@@ -492,9 +517,19 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
       }
     } else {
       _endCircleSize = widget.editorProperties.circleSizeOnDrag;
-      if ((_endPos.dx + details.delta.dx <= _thumbnailViewerW) &&
-          (_endPos.dx + details.delta.dx >= _startPos.dx) &&
-          !(_endPos.dx - _startPos.dx + details.delta.dx > maxLengthPixels!)) {
+      final newEndPos = _endPos.dx + details.delta.dx;
+      final currentSelectionLength = newEndPos - _startPos.dx;
+      
+      // Check constraints: bounds, max video length, and max edit length
+      final maxEditConstraint = maxEditLengthPixels == null || 
+                               currentSelectionLength <= maxEditLengthPixels!;
+      final maxVideoConstraint = maxLengthPixels == null || 
+                                currentSelectionLength <= maxLengthPixels!;
+      
+      if ((newEndPos <= _thumbnailViewerW) &&
+          (newEndPos >= _startPos.dx) &&
+          maxVideoConstraint &&
+          maxEditConstraint) {
         _endPos += details.delta;
         _onEndDragged();
       }
@@ -520,7 +555,7 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
         (_scrollController.position.pixels /
                 _scrollController.position.maxScrollExtent) *
             _remainingDuration;
-    widget.onChangeStart!(_videoStartPos);
+    widget.onChangeStart?.call(_videoStartPos);
     _linearTween.begin = _startPos.dx;
     _animationController!.duration =
         Duration(milliseconds: (_videoEndPos - _videoStartPos).toInt());
@@ -534,7 +569,7 @@ class _ScrollableTrimViewerState extends State<ScrollableTrimViewer>
         (_scrollController.position.pixels /
                 _scrollController.position.maxScrollExtent) *
             _remainingDuration;
-    widget.onChangeEnd!(_videoEndPos);
+    widget.onChangeEnd?.call(_videoEndPos);
     _linearTween.end = _endPos.dx;
     _animationController!.duration =
         Duration(milliseconds: (_videoEndPos - _videoStartPos).toInt());

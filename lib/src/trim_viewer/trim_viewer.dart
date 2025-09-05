@@ -42,6 +42,15 @@ class TrimViewer extends StatefulWidget {
   /// specifying this property is mandatory.
   final Duration maxVideoLength;
 
+  /// For defining the maximum duration that can be selected for trimming.
+  /// This constrains the actual trim selection length, regardless of the video's total duration.
+  ///
+  /// For example, if you have a 5-minute video and set `maxVideoEditLength` to 1 minute,
+  /// the user can only select a maximum of 1 minute from anywhere in the video for trimming.
+  ///
+  /// If not specified or set to Duration.zero, no constraint is applied.
+  final Duration? maxVideoEditLength;
+
   /// For showing the start and the end point of the
   /// video on top of the trimmer area.
   ///
@@ -110,15 +119,12 @@ class TrimViewer extends StatefulWidget {
   ///
   /// The optional parameters are:
   ///
-  /// * [type] for specifying the type of the trim viewer.
-  ///
-  ///
-  /// * [fit] for specifying the image fit type of each thumbnail image.
-  /// By default it is set to `BoxFit.fitHeight`.
-  ///
-  ///
   /// * [maxVideoLength] for specifying the maximum length of the
   /// output video.
+  ///
+  ///
+  /// * [maxVideoEditLength] for constraining the maximum duration that can
+  /// be selected for trimming. This limits the actual trim selection length.
   ///
   ///
   /// * [circlePaintColor] for specifying a color to the circle.
@@ -171,6 +177,7 @@ class TrimViewer extends StatefulWidget {
     super.key,
     required this.trimmer,
     this.maxVideoLength = const Duration(milliseconds: 0),
+    this.maxVideoEditLength,
     this.type = ViewerType.auto,
     this.viewerWidth = 50 * 8,
     this.viewerHeight = 50,
@@ -223,6 +230,7 @@ class _TrimViewerState extends State<TrimViewer> with TickerProviderStateMixin {
     final scrollableViewer = ScrollableTrimViewer(
       trimmer: widget.trimmer,
       maxVideoLength: widget.maxVideoLength,
+      maxVideoEditLength: widget.maxVideoEditLength,
       viewerWidth: widget.viewerWidth,
       viewerHeight: widget.viewerHeight,
       showDuration: widget.showDuration,
@@ -244,6 +252,7 @@ class _TrimViewerState extends State<TrimViewer> with TickerProviderStateMixin {
     final fixedTrimViewer = FixedTrimViewer(
       trimmer: widget.trimmer,
       maxVideoLength: widget.maxVideoLength,
+      maxVideoEditLength: widget.maxVideoEditLength,
       viewerWidth: widget.viewerWidth,
       viewerHeight: widget.viewerHeight,
       showDuration: widget.showDuration,
