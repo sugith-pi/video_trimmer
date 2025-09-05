@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:example/test_max_edit_length.dart';
 import 'package:example/trimmer_view.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -26,7 +25,7 @@ class HomePage extends StatelessWidget {
               File file = File(result.files.single.path!);
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) {
-                  return TestMaxEditLength(videoFile: file);
+                  return TrimmerView(file);
                 }),
               );
             }

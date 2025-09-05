@@ -81,6 +81,7 @@ class _TestMaxEditLengthState extends State<TestMaxEditLength> {
               trimmer: _trimmer,
               viewerHeight: 60.0,
               viewerWidth: MediaQuery.of(context).size.width - 32,
+              maxVideoLength: const Duration(minutes: 10), // Allow scrolling for center drag
               maxVideoEditLength: _maxEditLength,
               durationStyle: DurationStyle.FORMAT_MM_SS,
               editorProperties: TrimEditorProperties(
@@ -91,6 +92,8 @@ class _TestMaxEditLengthState extends State<TestMaxEditLength> {
                 circlePaintColor: _maxEditLength != null
                     ? Colors.red.shade700
                     : Colors.blue.shade700,
+                sideTapSize:
+                    20, // Smaller side tap areas to increase center drag zone
               ),
               onChangeStart: (value) => setState(() => _startValue = value),
               onChangeEnd: (value) => setState(() => _endValue = value),
@@ -104,6 +107,8 @@ class _TestMaxEditLengthState extends State<TestMaxEditLength> {
               children: [
                 Text(
                     'Selected Duration: ${((_endValue - _startValue) / 1000).toStringAsFixed(1)}s'),
+                Text('Start Time: ${(_startValue / 1000).toStringAsFixed(1)}s'),
+                Text('End Time: ${(_endValue / 1000).toStringAsFixed(1)}s'),
                 if (_maxEditLength != null)
                   Text(
                     'Limit: ${_maxEditLength!.inSeconds}s',
@@ -115,6 +120,19 @@ class _TestMaxEditLengthState extends State<TestMaxEditLength> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Instructions:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  '• Drag left/right handles to adjust duration',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const Text(
+                  '• Drag center area to move selection position',
+                  style: TextStyle(fontSize: 12, color: Colors.blue),
+                ),
               ],
             ),
           ),

@@ -90,8 +90,9 @@ class _TrimmerViewState extends State<TrimmerView> {
                       viewerHeight: 50.0,
                       viewerWidth: MediaQuery.of(context).size.width,
                       durationStyle: DurationStyle.FORMAT_MM_SS,
-                      // maxVideoLength: const Duration(seconds: 10),
-                      maxVideoEditLength: const Duration(minutes: 1), // Limit trim selection to 1 minute
+                      // maxVideoLength: const Duration(seconds: 60),
+                      maxVideoEditLength: const Duration(
+                          minutes: 1), // Limit trim selection to 1 minute
                       editorProperties: TrimEditorProperties(
                         borderPaintColor: Colors.yellow,
                         borderWidth: 4,
