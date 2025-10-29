@@ -96,7 +96,7 @@ SPEC CHECKSUMS:
   DKImagePickerController: b512c28220a2b8ac7419f21c491fc8534b7601ac
   DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
   file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_native_video_trimmer: 3a81cd49c8b789ed448a5d1606617633550496b5
   get_thumbnail_video: b9a180957daed3e9179e66268db51d8798e41f65
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
