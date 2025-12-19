@@ -81,10 +81,11 @@ packages:
   flutter_native_video_trimmer:
     dependency: "direct main"
     description:
-      name: flutter_native_video_trimmer
-      sha256: d31159c34fb4e56fe53919b5b9978f75b5fb4b2934ceb05c6b369929139d3b72
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: e2b8d022644a196e545f51a80079cacef4ac05db
+      resolved-ref: e2b8d022644a196e545f51a80079cacef4ac05db
+      url: "https://github.com/sugith-pi/flutter_native_video_trimmer"
+    source: git
     version: "1.1.9"
   flutter_web_plugins:
     dependency: transitive
@@ -143,10 +144,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: e3641ec5d63ebf0d9b41bd43201a66e3fc79a65db5f61fc181f04cd27aab950c
+      sha256: "23f08335362185a5ea2ad3a4e597f1375e78bce8a040df5c600c8d3552ef2394"
       url: "https://pub.dev"
     source: hosted
-    version: "1.16.0"
+    version: "1.17.0"
   path:
     dependency: "direct main"
     description:

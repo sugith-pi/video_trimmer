@@ -12,7 +12,10 @@ dependencies:
 
   video_player: ^2.9.5
   get_thumbnail_video: ^0.7.3
-  flutter_native_video_trimmer: ^1.1.9
+  flutter_native_video_trimmer:
+    git:
+      url: https://github.com/sugith-pi/flutter_native_video_trimmer
+      ref: e2b8d022644a196e545f51a80079cacef4ac05db
   path_provider: ^2.1.5
   intl: ^0.20.2
   path: ^1.9.1
